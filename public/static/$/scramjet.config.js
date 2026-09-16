@@ -119,7 +119,11 @@ var adblock = 1;
 const k = new TextEncoder().encode(
   btoa(
     new Date().toISOString().slice(0, 10) + location.host
-  ).split('').reverse().join('').slice(6.7)
+  )
+    .split("")
+    .reverse()
+    .join("")
+    .slice(6.7)
 );
 
 self.__uv$config = {
@@ -151,9 +155,9 @@ self.__uv$config = {
     try {
       const n =
         Math.min(
-          s.indexOf('?') + 1 || s.length + 1,
-          s.indexOf('#') + 1 || s.length + 1,
-          s.indexOf('&') + 1 || s.length + 1
+          s.indexOf("?") + 1 || s.length + 1,
+          s.indexOf("#") + 1 || s.length + 1,
+          s.indexOf("&") + 1 || s.length + 1
         ) - 1;
 
       let h = 0;
@@ -207,7 +211,7 @@ self.__uv$config = {
 
   flags: {
     serviceworkers: true,
-    rewriterLogs: false,
+    rewriterLogs: false
   },
 
   middleware: (request) => {
@@ -233,7 +237,7 @@ self.__uv$config = {
       host = self.location.origin;
     }
 
-    // Blocking logic for blocked sites
+    // Block selected sites
     if (
       blockedsites.includes(url.host) ||
       url.href.toLocaleLowerCase().includes("porn") ||
@@ -250,7 +254,7 @@ self.__uv$config = {
       }
     }
 
-    // Ad blocking logic
+    // Ad blocking
     if (adblock === 1) {
       if (scramjetBlocked.includes(url.host)) {
         return new Response(null, {});
@@ -266,7 +270,7 @@ self.__uv$config = {
       }
     }
 
-    // Redirect requests
+    // Redirect GET requests
     if (request.method === "GET") {
       return new Request(host + other, request);
     }
