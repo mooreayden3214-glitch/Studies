@@ -6,7 +6,6 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { logging, server as wisp } from '@mercuryworkshop/wisp-js/server';
 import { createBareServer } from '@tomphttp/bare-server-node';
 import { bareModulePath } from '@mercuryworkshop/bare-as-module3';
-import { epoxyPath } from '@mercuryworkshop/epoxy-transport';
 import { libcurlPath } from '@mercuryworkshop/libcurl-transport';
 import { baremuxPath } from '@mercuryworkshop/bare-mux/node';
 import { scramjetPath } from '@mercuryworkshop/scramjet/path';
@@ -34,7 +33,7 @@ const routeRequest = (req, resOrSocket, head) => {
     return wisp.routeRequest(req, resOrSocket, head);
   }
 
-  if (bare.shouldRoute(req)) {
+  if (bare?.shouldRoute(req)) {
     return head
       ? bare.routeUpgrade(req, resOrSocket, head)
       : bare.routeRequest(req, resOrSocket);
@@ -45,6 +44,13 @@ export default defineConfig(({ command }) => {
   const environment = command === 'serve' ? 'dev' : 'stable';
 
   return {
+    /*
+     * DayDreamX uses the "public" folder as the actual website.
+     * Keep those files as static files instead of trying to bundle
+     * every old JavaScript file with Vite.
+     */
+    publicDir: 'public',
+
     plugins: [
       react(),
 
@@ -102,24 +108,29 @@ export default defineConfig(({ command }) => {
         name: 'search',
         apply: 'serve',
 
-        configureServer(s) {
-          s.middlewares.use('/return', async (req, res) => {
-            const q = new URL(req.url, 'http://x')
+        configureServer(server) {
+          server.middlewares.use('/return', async (req, res) => {
+            const q = new URL(req.url, 'http://localhost')
               .searchParams
               .get('q');
 
             try {
-              const r =
+              const result =
                 q &&
                 (await fetch(
                   `https://duckduckgo.com/ac/?q=${encodeURIComponent(q)}`
                 ));
 
-              res.setHeader('Content-Type', 'application/json');
+              res.setHeader(
+                'Content-Type',
+                'application/json'
+              );
 
               res.end(
                 JSON.stringify(
-                  r ? await r.json() : { error: 'query parameter?' }
+                  result
+                    ? await result.json()
+                    : { error: 'query parameter?' }
                 )
               );
             } catch {
@@ -135,15 +146,15 @@ export default defineConfig(({ command }) => {
     ],
 
     build: {
-      esbuild: {
-        legalComments: 'none',
-        treeShaking: true,
-      },
-
+      /*
+       * Build the existing HTML file without changing the
+       * old JavaScript/CSS structure.
+       */
       rollupOptions: {
-        input: {
-          main: resolve(__dirname, 'public/pages/index.html'),
-        },
+        input: resolve(
+          __dirname,
+          'public/pages/index.html'
+        ),
 
         output: {
           entryFileNames: '[hash].js',
@@ -166,8 +177,18 @@ export default defineConfig(({ command }) => {
         },
       },
 
+      outDir: 'dist',
+
+      emptyOutDir: true,
+
       minify: 'esbuild',
+
       sourcemap: false,
+
+      esbuild: {
+        legalComments: 'none',
+        treeShaking: true,
+      },
     },
 
     css: {
@@ -188,7 +209,10 @@ export default defineConfig(({ command }) => {
           target: '',
           changeOrigin: true,
           rewrite: (path) =>
-            path.replace(/^\/assets\/img/, '/img'),
+            path.replace(
+              /^\/assets\/img/,
+              '/img'
+            ),
         },
       },
     },
