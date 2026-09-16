@@ -1,4 +1,4 @@
-import { defineConfig, normalizePath } from 'vite';
+import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react-swc';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
@@ -13,7 +13,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const useBare = process.env.BARE === 'false' ? false : true;
+const useBare = process.env.BARE !== 'false';
 
 logging.set_level(logging.NONE);
 
@@ -25,17 +25,7 @@ Object.assign(wisp.options, {
   dns_result_order: 'ipv4first',
 });
 
-const routeRequest = (req, resOrSocket, head) => {
-  if (req.url?.startsWith('/wisp/')) {
-    return wisp.routeRequest(req, resOrSocket, head);
-  }
-
-  if (bare?.shouldRoute(req)) {
-    return head
-      ? bare.routeUpgrade(req, resOrSocket, head)
-      : bare.routeRequest(req, resOrSocket);
-  }
-};
+const staticRoot = resolve('public/static');
 
 export default defineConfig({
   root: 'public',
@@ -47,114 +37,126 @@ export default defineConfig({
 
     viteStaticCopy({
       targets: [
+        // DayDreamX static files
         {
-          src: 'static/assets/**/*',
+          src: resolve(staticRoot, 'assets/**/*'),
           dest: 'assets',
         },
         {
-          src: '@/**/*',
+          src: resolve(staticRoot, '@/**/*'),
           dest: '@',
         },
         {
-          src: '$/**/*',
+          src: resolve(staticRoot, '$/**/*'),
           dest: '$',
         },
         {
-          src: '!/**/*',
+          src: resolve(staticRoot, '!/**/*'),
           dest: '!',
         },
         {
-          src: 'e/**/*',
+          src: resolve(staticRoot, 'e/**/*'),
           dest: 'e',
         },
         {
-          src: '&/**/*',
+          src: resolve(staticRoot, '&/**/*'),
           dest: '&',
         },
-
         {
-          src: [normalizePath(resolve(libcurlPath, '*'))],
+          src: resolve(staticRoot, '9/**/*'),
+          dest: '9',
+        },
+
+        // Proxy libraries
+        {
+          src: resolve(libcurlPath, '*'),
           dest: 'libcurl',
         },
         {
-          src: [normalizePath(resolve(baremuxPath, '*'))],
+          src: resolve(baremuxPath, '*'),
           dest: 'baremux',
         },
         {
-          src: [normalizePath(resolve(scramjetPath, '*'))],
+          src: resolve(scramjetPath, '*'),
           dest: 'scram',
         },
-        useBare && {
-          src: [normalizePath(resolve(bareModulePath, '*'))],
-          dest: 'baremod',
-        },
+
+        ...(useBare
+          ? [
+              {
+                src: resolve(bareModulePath, '*'),
+                dest: 'baremod',
+              },
+            ]
+          : []),
+
+        // Ultraviolet
         {
-          src: [
-            normalizePath(resolve(uvPath, 'uv.handler.js')),
-            normalizePath(resolve(uvPath, 'uv.client.js')),
-            normalizePath(resolve(uvPath, 'uv.bundle.js')),
-            normalizePath(resolve(uvPath, 'sw.js')),
-          ],
+          src: resolve(uvPath, 'uv.handler.js'),
           dest: 'uv',
         },
-      ].filter(Boolean),
-    }),
+        {
+          src: resolve(uvPath, 'uv.client.js'),
+          dest: 'uv',
+        },
+        {
+          src: resolve(uvPath, 'uv.bundle.js'),
+          dest: 'uv',
+        },
+        {
+          src: resolve(uvPath, 'sw.js'),
+          dest: 'uv',
+        },
+      ],
+    },
 
+    // Development server support
     {
-      name: 'server',
+      name: 'daydream-server',
       apply: 'serve',
 
       configureServer(server) {
         bare = createBareServer('/seal/');
 
-        server.httpServer?.on(
-          'upgrade',
-          (req, sock, head) => {
-            routeRequest(req, sock, head);
+        server.httpServer?.on('upgrade', (req, socket, head) => {
+          if (req.url?.startsWith('/wisp/')) {
+            wisp.routeRequest(req, socket, head);
+            return;
           }
-        );
 
-        server.middlewares.use((req, res, next) => {
-          routeRequest(req, res) || next();
+          if (bare.shouldRoute(req)) {
+            bare.routeUpgrade(req, socket, head);
+          }
         });
       },
     },
 
+    // Search API
     {
-      name: 'search',
+      name: 'daydream-search',
       apply: 'serve',
 
       configureServer(server) {
         server.middlewares.use('/return', async (req, res) => {
-          const q = new URL(req.url, 'http://localhost')
-            .searchParams
-            .get('q');
+          const url = new URL(req.url || '', 'http://localhost');
+          const q = url.searchParams.get('q');
 
           try {
-            const result =
-              q &&
-              (await fetch(
-                `https://duckduckgo.com/ac/?q=${encodeURIComponent(q)}`
-              ));
+            if (!q) {
+              res.statusCode = 401;
+              res.end(JSON.stringify({ error: 'query parameter?' }));
+              return;
+            }
 
-            res.setHeader(
-              'Content-Type',
-              'application/json'
+            const response = await fetch(
+              `https://duckduckgo.com/ac/?q=${encodeURIComponent(q)}`
             );
 
-            res.end(
-              JSON.stringify(
-                result
-                  ? await result.json()
-                  : { error: 'query parameter?' }
-              )
-            );
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(await response.json()));
           } catch {
-            res.end(
-              JSON.stringify({
-                error: 'request failed',
-              })
-            );
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'request failed' }));
           }
         });
       },
@@ -166,10 +168,7 @@ export default defineConfig({
     emptyOutDir: true,
 
     rollupOptions: {
-      input: resolve(
-        process.cwd(),
-        'public/pages/index.html'
-      ),
+      input: resolve('pages/index.html'),
 
       output: {
         entryFileNames: '[hash].js',
@@ -180,37 +179,6 @@ export default defineConfig({
 
     minify: false,
     sourcemap: false,
-
-    esbuild: {
-      legalComments: 'none',
-      treeShaking: true,
-    },
-  },
-
-  css: {
-    modules: {
-      generateScopedName: () =>
-        String.fromCharCode(
-          97 + Math.floor(Math.random() * 17)
-        ) +
-        Math.random()
-          .toString(36)
-          .substring(2, 8),
-    },
-  },
-
-  server: {
-    proxy: {
-      '': {
-        target: '',
-        changeOrigin: true,
-        rewrite: (path) =>
-          path.replace(
-            /^\/assets\/img/,
-            '/img'
-          ),
-      },
-    },
   },
 
   define: {
