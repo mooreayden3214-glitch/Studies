@@ -105,7 +105,7 @@ const scramjetBlocked = [
   "google-analytics.com",
 ];
 
-const blockedsites = [
+const scramjetBlockedSites = [
   "pornhub.com",
   "xvideos.com",
   "xnxx.com",
@@ -238,7 +238,7 @@ self.__uv$config = {
 
     // Block selected sites
     if (
-      blockedsites.includes(url.host) ||
+      scramjetBlockedSites.includes(url.host) ||
       url.href.toLocaleLowerCase().includes("porn") ||
       url.href.toLocaleLowerCase().includes("18+") ||
       url.href.toLocaleLowerCase().includes("xvideos") ||
