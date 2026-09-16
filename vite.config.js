@@ -2,23 +2,25 @@ import { defineConfig, normalizePath } from 'vite';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react-swc';
-import vitePluginBundleObfuscator from 'vite-plugin-bundle-obfuscator';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { logging, server as wisp } from '@mercuryworkshop/wisp-js/server';
-import { createBareServer } from "@tomphttp/bare-server-node";
+import { createBareServer } from '@tomphttp/bare-server-node';
 import { bareModulePath } from '@mercuryworkshop/bare-as-module3';
-import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
+import { epoxyPath } from '@mercuryworkshop/epoxy-transport';
 import { libcurlPath } from '@mercuryworkshop/libcurl-transport';
 import { baremuxPath } from '@mercuryworkshop/bare-mux/node';
-import { scramjetPath } from "@mercuryworkshop/scramjet/path";
+import { scramjetPath } from '@mercuryworkshop/scramjet/path';
 import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 
 dotenv.config();
-const useBare = process.env.BARE === "false" ? false : true;
+
+const useBare = process.env.BARE === 'false' ? false : true;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
 logging.set_level(logging.NONE);
+
 let bare;
 
 Object.assign(wisp.options, {
@@ -28,33 +30,15 @@ Object.assign(wisp.options, {
 });
 
 const routeRequest = (req, resOrSocket, head) => {
-  if (req.url?.startsWith('/wisp/')) return wisp.routeRequest(req, resOrSocket, head);
-  if (bare.shouldRoute(req))
-    return head ? bare.routeUpgrade(req, resOrSocket, head) : bare.routeRequest(req, resOrSocket);
-};
+  if (req.url?.startsWith('/wisp/')) {
+    return wisp.routeRequest(req, resOrSocket, head);
+  }
 
-const obf = {
-  enable: true,
-  autoExcludeNodeModules: true,
-  threadPool: true,
-  options: {
-    compact: true,
-    controlFlowFlattening: true,
-    controlFlowFlatteningThreshold: 0.5,
-    deadCodeInjection: false,
-    debugProtection: false,
-    disableConsoleOutput: true,
-    identifierNamesGenerator: 'hexadecimal',
-    selfDefending: true,
-    simplify: true,
-    splitStrings: false,
-    stringArray: true,
-    stringArrayEncoding: [],
-    stringArrayCallsTransform: false,
-    transformObjectKeys: false,
-    unicodeEscapeSequence: false,
-    ignoreImports: true,
-  },
+  if (bare.shouldRoute(req)) {
+    return head
+      ? bare.routeUpgrade(req, resOrSocket, head)
+      : bare.routeRequest(req, resOrSocket);
+  }
 };
 
 export default defineConfig(({ command }) => {
@@ -63,13 +47,25 @@ export default defineConfig(({ command }) => {
   return {
     plugins: [
       react(),
-      vitePluginBundleObfuscator(obf),
+
       viteStaticCopy({
         targets: [
-          { src: [normalizePath(resolve(libcurlPath, '*'))], dest: 'libcurl' },
-          { src: [normalizePath(resolve(baremuxPath, '*'))], dest: 'baremux' },
-          { src: [normalizePath(resolve(scramjetPath, '*'))], dest: 'scram' },
-          useBare && { src: [normalizePath(resolve(bareModulePath, '*'))], dest: 'baremod' },
+          {
+            src: [normalizePath(resolve(libcurlPath, '*'))],
+            dest: 'libcurl',
+          },
+          {
+            src: [normalizePath(resolve(baremuxPath, '*'))],
+            dest: 'baremux',
+          },
+          {
+            src: [normalizePath(resolve(scramjetPath, '*'))],
+            dest: 'scram',
+          },
+          useBare && {
+            src: [normalizePath(resolve(bareModulePath, '*'))],
+            dest: 'baremod',
+          },
           {
             src: [
               normalizePath(resolve(uvPath, 'uv.handler.js')),
@@ -81,73 +77,124 @@ export default defineConfig(({ command }) => {
           },
         ].filter(Boolean),
       }),
+
       {
         name: 'server',
         apply: 'serve',
+
         configureServer(server) {
           bare = createBareServer('/seal/');
-          server.httpServer?.on('upgrade', (req, sock, head) => routeRequest(req, sock, head));
-          server.middlewares.use((req, res, next) => routeRequest(req, res) || next());
+
+          server.httpServer?.on(
+            'upgrade',
+            (req, sock, head) => {
+              routeRequest(req, sock, head);
+            }
+          );
+
+          server.middlewares.use((req, res, next) => {
+            routeRequest(req, res) || next();
+          });
         },
       },
+
       {
         name: 'search',
         apply: 'serve',
+
         configureServer(s) {
           s.middlewares.use('/return', async (req, res) => {
-            const q = new URL(req.url, 'http://x').searchParams.get('q');
+            const q = new URL(req.url, 'http://x')
+              .searchParams
+              .get('q');
+
             try {
-              const r = q && (await fetch(`https://duckduckgo.com/ac/?q=${encodeURIComponent(q)}`));
+              const r =
+                q &&
+                (await fetch(
+                  `https://duckduckgo.com/ac/?q=${encodeURIComponent(q)}`
+                ));
+
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify(r ? await r.json() : { error: 'query parameter?' }));
+
+              res.end(
+                JSON.stringify(
+                  r ? await r.json() : { error: 'query parameter?' }
+                )
+              );
             } catch {
-              res.end(JSON.stringify({ error: 'request failed' }));
+              res.end(
+                JSON.stringify({
+                  error: 'request failed',
+                })
+              );
             }
           });
         },
       },
     ],
+
     build: {
-      esbuild: { 
+      esbuild: {
         legalComments: 'none',
-        treeShaking: true
+        treeShaking: true,
       },
+
       rollupOptions: {
         input: {
           main: resolve(__dirname, 'public/pages/index.html'),
         },
+
         output: {
           entryFileNames: '[hash].js',
+
           chunkFileNames: (chunk) =>
-            chunk.name === 'vendor-modules' ? 'chunks/vendor-modules.[hash].js' : 'chunks/[hash].js',
+            chunk.name === 'vendor-modules'
+              ? 'chunks/vendor-modules.[hash].js'
+              : 'chunks/[hash].js',
+
           assetFileNames: 'assets/[hash].[ext]',
-          manualChunks: (id) => (id.includes('node_modules') ? 'vendor-modules' : undefined),
+
+          manualChunks: (id) =>
+            id.includes('node_modules')
+              ? 'vendor-modules'
+              : undefined,
         },
+
         treeshake: {
-          moduleSideEffects: 'no-external'
-        }
+          moduleSideEffects: 'no-external',
+        },
       },
+
       minify: 'esbuild',
-      sourcemap: false
+      sourcemap: false,
     },
+
     css: {
       modules: {
         generateScopedName: () =>
-          String.fromCharCode(97 + Math.floor(Math.random() * 17)) +
-          Math.random().toString(36).substring(2, 8),
+          String.fromCharCode(
+            97 + Math.floor(Math.random() * 17)
+          ) +
+          Math.random()
+            .toString(36)
+            .substring(2, 8),
       },
     },
+
     server: {
       proxy: {
         '': {
           target: '',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/assets\/img/, '/img'),
+          rewrite: (path) =>
+            path.replace(/^\/assets\/img/, '/img'),
         },
       },
     },
+
     define: {
-      __ENVIRONMENT__: JSON.stringify(environment)
-    }
+      __ENVIRONMENT__: JSON.stringify(environment),
+    },
   };
 });
