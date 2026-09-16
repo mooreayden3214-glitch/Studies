@@ -1,6 +1,7 @@
+```js
 /*global Scramjet*/
 
-const blocked = [
+const scramjetBlocked = [
   "trk.pinterest.com",
   "widgets.pinterest.com",
   "events.reddit.com",
@@ -115,89 +116,152 @@ const blockedsites = [
 
 var adblock = 1;
 
-const k = new TextEncoder().encode(btoa(new Date().toISOString().slice(0, 10) + location.host).split('').reverse().join('').slice(6.7));
-self.__uv$config = {
-    prefix: "/@/Daydream/",
-	encodeUrl: s => {
-        if (!s) return s;
-        try {
-            const d = new TextEncoder().encode(s), o = new Uint8Array(d.length);
-            for (let i = 0; i < d.length; i++) o[i] = d[i] ^ k[i % 8];
-            return Array.from(o, b => b.toString(16).padStart(2, "0")).join("");
-        } catch { return s; }
-    },
-    decodeUrl: s => {
-        if (!s) return s;
-        try {
-            const n = Math.min(s.indexOf('?') + 1 || s.length + 1, s.indexOf('#') + 1 || s.length + 1, s.indexOf('&') + 1 || s.length + 1) - 1;
-            let h = 0;
-            for (let i = 0; i < n && i < s.length; i++) {
-                const c = s.charCodeAt(i);
-                if (!((c >= 48 && c <= 57) || (c >= 65 && c <= 70) || (c >= 97 && c <= 102))) break;
-                h = i + 1;
-            }
-            if (h < 2 || h % 2) return decodeURIComponent(s);
-            const l = h >> 1, o = new Uint8Array(l);
-            for (let i = 0; i < l; i++) {
-                const x = i << 1;
-                o[i] = parseInt(s[x] + s[x + 1], 16) ^ k[i % 8];
-            }
-            return new TextDecoder().decode(o) + s.slice(h);
-        } catch { return decodeURIComponent(s); }
-    },
-    files: {
-      wasm: "/$/scramjet.wasm.wasm",
-      worker: "/$/scramjet.all.js",
-      client: "/$/scramjet.bundle.js",
-      shared: "/$/scramjet.shared.js",
-      sync: "/$/scramjet.sync.js"
-  },
-  siteFlags: {
-},
-flags: {
-  serviceworkers: true,
-  rewriterLogs: false,
-},
-},
+const k = new TextEncoder().encode(
+  btoa(
+    new Date().toISOString().slice(0, 10) + location.host
+  ).split('').reverse().join('').slice(6.7)
+);
 
-  middleware; (request) => {
+self.__uv$config = {
+  prefix: "/@/Daydream/",
+
+  encodeUrl: s => {
+    if (!s) return s;
+
+    try {
+      const d = new TextEncoder().encode(s);
+      const o = new Uint8Array(d.length);
+
+      for (let i = 0; i < d.length; i++) {
+        o[i] = d[i] ^ k[i % 8];
+      }
+
+      return Array.from(
+        o,
+        b => b.toString(16).padStart(2, "0")
+      ).join("");
+    } catch {
+      return s;
+    }
+  },
+
+  decodeUrl: s => {
+    if (!s) return s;
+
+    try {
+      const n =
+        Math.min(
+          s.indexOf('?') + 1 || s.length + 1,
+          s.indexOf('#') + 1 || s.length + 1,
+          s.indexOf('&') + 1 || s.length + 1
+        ) - 1;
+
+      let h = 0;
+
+      for (let i = 0; i < n && i < s.length; i++) {
+        const c = s.charCodeAt(i);
+
+        if (
+          !(
+            (c >= 48 && c <= 57) ||
+            (c >= 65 && c <= 70) ||
+            (c >= 97 && c <= 102)
+          )
+        ) {
+          break;
+        }
+
+        h = i + 1;
+      }
+
+      if (h < 2 || h % 2) {
+        return decodeURIComponent(s);
+      }
+
+      const l = h >> 1;
+      const o = new Uint8Array(l);
+
+      for (let i = 0; i < l; i++) {
+        const x = i << 1;
+
+        o[i] =
+          parseInt(s[x] + s[x + 1], 16) ^
+          k[i % 8];
+      }
+
+      return new TextDecoder().decode(o) + s.slice(h);
+    } catch {
+      return decodeURIComponent(s);
+    }
+  },
+
+  files: {
+    wasm: "/$/scramjet.wasm.wasm",
+    worker: "/$/scramjet.all.js",
+    client: "/$/scramjet.bundle.js",
+    shared: "/$/scramjet.shared.js",
+    sync: "/$/scramjet.sync.js"
+  },
+
+  siteFlags: {},
+
+  flags: {
+    serviceworkers: true,
+    rewriterLogs: false,
+  },
+
+  middleware: (request) => {
     const url = new URL(request.url);
+
     let host = url.origin;
-    let other = url.href.substring(url.origin.length, url.href.length);
+    let other = url.href.substring(
+      url.origin.length,
+      url.href.length
+    );
 
     if (url.href.includes("defrgthyju")) {
       other = other.substring(0, other.length - 10);
       adblock = 0;
     }
+
     if (url.href.includes("lokijuhygt")) {
       other = other.substring(0, other.length - 10);
       adblock = 1;
     }
+
     if (url.href.includes("?wfryhktgb")) {
       host = self.location.origin;
     }
 
-    // Blocking logic for blockedsites
-    if (blockedsites.includes(url.host) ||
+    // Blocking logic for blocked sites
+    if (
+      blockedsites.includes(url.host) ||
       url.href.toLocaleLowerCase().includes("porn") ||
       url.href.toLocaleLowerCase().includes("18+") ||
       url.href.toLocaleLowerCase().includes("xvideos") ||
-      url.href.toLocaleLowerCase().includes("xxx")) {
-      // Redirect to a blocked page if the site is in blockedsites
+      url.href.toLocaleLowerCase().includes("xxx")
+    ) {
       if (!url.href.includes("?wfryhktgb")) {
-        return new Request(self.location.origin + "/public/pages/internal/Checkfailed/Checkfailed.html", request);
+        return new Request(
+          self.location.origin +
+            "/public/pages/internal/Checkfailed/Checkfailed.html",
+          request
+        );
       }
     }
 
     // Ad blocking logic
     if (adblock === 1) {
-      if (blocked.includes(url.host)) {
+      if (scramjetBlocked.includes(url.host)) {
         return new Response(null, {});
       }
-      if (url.pathname.includes("ads.js") ||
+
+      if (
+        url.pathname.includes("ads.js") ||
         url.pathname.includes("pagead.js") ||
-		url.pathname.includes("ad.status.js") ||
-        url.pathname.includes("partner.ads.js")) {
+        url.pathname.includes("ad.status.js") ||
+        url.pathname.includes("partner.ads.js")
+      ) {
         return new Response(null, {});
       }
     }
@@ -209,3 +273,5 @@ flags: {
 
     return request;
   }
+};
+```
