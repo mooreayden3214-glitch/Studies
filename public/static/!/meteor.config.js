@@ -1,4 +1,3 @@
-```js
 /*global Meteor*/
 
 const meteorBlocked = [
@@ -279,4 +278,3 @@ config.middleware = (request) => {
 
 // Expose the completed configuration.
 self.__meteor$config = config;
-```
