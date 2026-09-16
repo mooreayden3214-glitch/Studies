@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
+    "@mercuryworkshop/epoxy-transport": "^2.1.27",
+    "@mercuryworkshop/scramjet": "^1.1.0",
+    "javascript-obfuscator": "^4.1.1",
     "@emotion/styled": "^11.14.1",
     "@fastify/cookie": "^11.0.2",
     "@fastify/express": "^4.0.2",
