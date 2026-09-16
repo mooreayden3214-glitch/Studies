@@ -105,7 +105,7 @@ const meteorBlocked = [
   "google-analytics.com",
 ];
 
-const blockedsites = [
+const meteorBlockedSites = [
   "pornhub.com",
   "xvideos.com",
   "xnxx.com",
@@ -237,7 +237,7 @@ config.middleware = (request) => {
 
   // Block selected sites
   if (
-    blockedsites.includes(url.host) ||
+    meteorBlockedSites.includes(url.host) ||
     url.href.toLocaleLowerCase().includes("porn") ||
     url.href.toLocaleLowerCase().includes("18+") ||
     url.href.toLocaleLowerCase().includes("xvideos") ||
