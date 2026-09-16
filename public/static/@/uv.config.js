@@ -1,6 +1,6 @@
 /*global Ultraviolet*/
 
-const blocked = [
+const uvblocked = [
   "trk.pinterest.com", "widgets.pinterest.com", "events.reddit.com", "events.redditmedia.com", 
   "ads.youtube.com", "ads-api.tiktok.com", "analytics.tiktok.com", "ads-sg.tiktok.com", 
   "analytics-sg.tiktok.com", "business-api.tiktok.com", "ads.tiktok.com", "log.byteoversea.com",
@@ -29,7 +29,7 @@ const blocked = [
   "static.ads-twitter.com", "ads-api.twitter.com",
 ];
 
-const blockedsites = [
+const uvBlockedSites = [
   "pornhub.com", "xvideos.com",
   "xnxx.com", "pornmate.com",
   "bestpornsites.net"
@@ -92,7 +92,7 @@ self.__uv$config = {
     }
 
     // Blocking logic for blockedsites
-    if (blockedsites.includes(url.host) ||
+    if (uvBlockedSites.includes(url.host) ||
       url.href.toLocaleLowerCase().includes("porn") ||
       url.href.toLocaleLowerCase().includes("18+") ||
       url.href.toLocaleLowerCase().includes("xvideos") ||
@@ -105,7 +105,7 @@ self.__uv$config = {
 
     // Ad blocking logic
     if (adblock === 1) {
-       if (blockedsites.includes(url.host)) {
+       if (uvBlockedSites.includes(url.host)) {
         return new Response(null, {});
       }
       if (url.pathname.includes("ads.js") ||
