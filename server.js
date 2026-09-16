@@ -121,7 +121,7 @@ app.get("/return", async (req, reply) =>
 app.setNotFoundHandler((req, reply) =>
   req.raw.method === "GET" &&
   req.headers.accept?.includes("text/html")
-    ? reply.sendFile("public/pages/index.html")
+    ? reply.sendFile("pages/index.html")
     : reply.code(404).send({ error: "Not Found" })
 );
 
