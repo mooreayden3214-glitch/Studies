@@ -39,7 +39,7 @@ __webpack_require__.ruid = "bundler=rspack@1.0.14";
 })();
 /************************************************************************/
 
-const blocked = [
+const eclipseblocked = [
   "trk.pinterest.com",
   "widgets.pinterest.com",
   "events.reddit.com",
@@ -144,7 +144,7 @@ const blocked = [
   "google-analytics.com",
 ];
 
-const blockedsites = [
+const eclipseBlockedSites = [
   "pornhub.com",
   "xvideos.com",
   "xnxx.com",
@@ -210,7 +210,7 @@ self.__eclipse$config = {
     }
 
     // Blocking logic for blockedsites
-    if (blockedsites.includes(url.host) ||
+    if (eclipseblockedsites.includes(url.host) ||
       url.href.toLocaleLowerCase().includes("porn") ||
       url.href.toLocaleLowerCase().includes("18+") ||
       url.href.toLocaleLowerCase().includes("xvideos") ||
@@ -223,7 +223,7 @@ self.__eclipse$config = {
 
     // Ad blocking logic
     if (adblock === 1) {
-      if (blocked.includes(url.host)) {
+      if (eclipseblocked.includes(url.host)) {
         return new Response(null, {});
       }
       if (url.pathname.includes("ads.js") ||
