@@ -25,11 +25,8 @@ Object.assign(wisp.options, {
   dns_result_order: 'ipv4first',
 });
 
-const staticRoot = resolve('public/static');
-
 export default defineConfig({
   root: 'public',
-
   publicDir: false,
 
   plugins: [
@@ -37,37 +34,34 @@ export default defineConfig({
 
     viteStaticCopy({
       targets: [
-        // DayDreamX static files
         {
-          src: resolve(staticRoot, 'assets/**/*'),
+          src: resolve('public/static/assets/**/*'),
           dest: 'assets',
         },
         {
-          src: resolve(staticRoot, '@/**/*'),
+          src: resolve('public/static/@/**/*'),
           dest: '@',
         },
         {
-          src: resolve(staticRoot, '$/**/*'),
+          src: resolve('public/static/$/**/*'),
           dest: '$',
         },
         {
-          src: resolve(staticRoot, '!/**/*'),
+          src: resolve('public/static/!/**/*'),
           dest: '!',
         },
         {
-          src: resolve(staticRoot, 'e/**/*'),
+          src: resolve('public/static/e/**/*'),
           dest: 'e',
         },
         {
-          src: resolve(staticRoot, '&/**/*'),
+          src: resolve('public/static/&/**/*'),
           dest: '&',
         },
         {
-          src: resolve(staticRoot, '9/**/*'),
+          src: resolve('public/static/9/**/*'),
           dest: '9',
         },
-
-        // Proxy libraries
         {
           src: resolve(libcurlPath, '*'),
           dest: 'libcurl',
@@ -80,7 +74,6 @@ export default defineConfig({
           src: resolve(scramjetPath, '*'),
           dest: 'scram',
         },
-
         ...(useBare
           ? [
               {
@@ -89,8 +82,6 @@ export default defineConfig({
               },
             ]
           : []),
-
-        // Ultraviolet
         {
           src: resolve(uvPath, 'uv.handler.js'),
           dest: 'uv',
@@ -108,9 +99,8 @@ export default defineConfig({
           dest: 'uv',
         },
       ],
-    },
+    }),
 
-    // Development server support
     {
       name: 'daydream-server',
       apply: 'serve',
@@ -131,7 +121,6 @@ export default defineConfig({
       },
     },
 
-    // Search API
     {
       name: 'daydream-search',
       apply: 'serve',
