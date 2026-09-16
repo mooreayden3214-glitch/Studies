@@ -38,10 +38,8 @@ const routeRequest = (req, resOrSocket, head) => {
 };
 
 export default defineConfig({
-  /*
-   * Do NOT let Vite process public/pages/index.html.
-   * DayDreamX is using public as a static website.
-   */
+  root: 'public',
+
   publicDir: false,
 
   plugins: [
@@ -50,30 +48,46 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
-          src: 'public/**/*',
-          dest: '.',
+          src: 'assets/**/*',
+          dest: 'assets',
+        },
+        {
+          src: '@/**/*',
+          dest: '@',
+        },
+        {
+          src: '$/**/*',
+          dest: '$',
+        },
+        {
+          src: '!/**/*',
+          dest: '!',
+        },
+        {
+          src: 'e/**/*',
+          dest: 'e',
+        },
+        {
+          src: '&/**/*',
+          dest: '&',
         },
 
         {
           src: [normalizePath(resolve(libcurlPath, '*'))],
           dest: 'libcurl',
         },
-
         {
           src: [normalizePath(resolve(baremuxPath, '*'))],
           dest: 'baremux',
         },
-
         {
           src: [normalizePath(resolve(scramjetPath, '*'))],
           dest: 'scram',
         },
-
         useBare && {
           src: [normalizePath(resolve(bareModulePath, '*'))],
           dest: 'baremod',
         },
-
         {
           src: [
             normalizePath(resolve(uvPath, 'uv.handler.js')),
@@ -147,15 +161,56 @@ export default defineConfig({
     },
   ],
 
-  /*
-   * We are not building the old HTML page with Rollup.
-   * The public folder is copied directly into dist.
-   */
   build: {
-    outDir: 'dist',
+    outDir: '../dist',
     emptyOutDir: true,
+
+    rollupOptions: {
+      input: resolve(
+        process.cwd(),
+        'public/pages/index.html'
+      ),
+
+      output: {
+        entryFileNames: '[hash].js',
+        chunkFileNames: 'chunks/[hash].js',
+        assetFileNames: 'assets/[hash].[ext]',
+      },
+    },
+
     minify: false,
     sourcemap: false,
+
+    esbuild: {
+      legalComments: 'none',
+      treeShaking: true,
+    },
+  },
+
+  css: {
+    modules: {
+      generateScopedName: () =>
+        String.fromCharCode(
+          97 + Math.floor(Math.random() * 17)
+        ) +
+        Math.random()
+          .toString(36)
+          .substring(2, 8),
+    },
+  },
+
+  server: {
+    proxy: {
+      '': {
+        target: '',
+        changeOrigin: true,
+        rewrite: (path) =>
+          path.replace(
+            /^\/assets\/img/,
+            '/img'
+          ),
+      },
+    },
   },
 
   define: {
