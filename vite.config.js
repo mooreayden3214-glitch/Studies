@@ -26,7 +26,7 @@ Object.assign(wisp.options, {
 });
 
 export default defineConfig({
-  root: '.',
+  root: 'public',
   publicDir: false,
 
   plugins: [
@@ -100,70 +100,14 @@ export default defineConfig({
         },
       ],
     }),
-
-    {
-      name: 'daydream-server',
-      apply: 'serve',
-
-      configureServer(server) {
-        bare = createBareServer('/seal/');
-
-        server.httpServer?.on('upgrade', (req, socket, head) => {
-          if (req.url?.startsWith('/wisp/')) {
-            wisp.routeRequest(req, socket, head);
-            return;
-          }
-
-          if (bare.shouldRoute(req)) {
-            bare.routeUpgrade(req, socket, head);
-          }
-        });
-      },
-    },
-
-    {
-      name: 'daydream-search',
-      apply: 'serve',
-
-      configureServer(server) {
-        server.middlewares.use('/return', async (req, res) => {
-          const url = new URL(req.url || '', 'http://localhost');
-          const q = url.searchParams.get('q');
-
-          try {
-            if (!q) {
-              res.statusCode = 401;
-              res.end(JSON.stringify({ error: 'query parameter?' }));
-              return;
-            }
-
-            const response = await fetch(
-              `https://duckduckgo.com/ac/?q=${encodeURIComponent(q)}`
-            );
-
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(await response.json()));
-          } catch {
-            res.statusCode = 500;
-            res.end(JSON.stringify({ error: 'request failed' }));
-          }
-        });
-      },
-    },
   ],
 
   build: {
-    outDir: 'dist',
+    outDir: '../dist',
     emptyOutDir: true,
 
     rollupOptions: {
       input: resolve('public/pages/index.html'),
-
-      output: {
-        entryFileNames: '[hash].js',
-        chunkFileNames: 'chunks/[hash].js',
-        assetFileNames: 'assets/[hash].[ext]',
-      },
     },
 
     minify: false,
