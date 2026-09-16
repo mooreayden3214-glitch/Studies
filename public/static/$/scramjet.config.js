@@ -1,4 +1,3 @@
-```js
 /*global Scramjet*/
 
 const scramjetBlocked = [
@@ -278,4 +277,3 @@ self.__uv$config = {
     return request;
   }
 };
-```
