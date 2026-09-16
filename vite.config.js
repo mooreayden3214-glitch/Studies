@@ -26,7 +26,7 @@ Object.assign(wisp.options, {
 });
 
 export default defineConfig({
-  root: 'public',
+  root: '.',
   publicDir: false,
 
   plugins: [
@@ -153,11 +153,11 @@ export default defineConfig({
   ],
 
   build: {
-    outDir: '../dist',
+    outDir: 'dist',
     emptyOutDir: true,
 
     rollupOptions: {
-      input: resolve('pages/index.html'),
+      input: resolve('public/pages/index.html'),
 
       output: {
         entryFileNames: '[hash].js',
